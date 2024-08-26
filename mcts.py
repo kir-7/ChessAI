@@ -5,19 +5,19 @@ import random
 import math
 
 class Node:
-    def __init__(self, parent):
+    def __init__(self, parent=None):
         self.state = chess.Board()
         self.parent = parent
         self.action = ''
-        self.visits = 0
+        self.children = set()
+        self.v = 0
         self.N = 0
         self.n = 0
-
+        
 def ucbl(curr_node):
-    return curr_node.v + 2*math.sqrt(math.log(curr_node.N+(1e-6))/curr_node.n + 1e-10)
+    return curr_node.v + 2*math.sqrt((math.log(curr_node.N + math.e + 1e-6))/(curr_node.n + 1e-10))
 
 def rollout(curr_node):
-
     if curr_node.state.is_game_over():
         board = curr_node.state
         if board.result() == '1-0':
@@ -26,7 +26,6 @@ def rollout(curr_node):
             return (-1, curr_node)
         else :
             return (0.5, curr_node)
-    
     all_moves = [curr_node.state.san(i) for i in curr_node.state.legal_moves]
 
     for i in all_moves:
@@ -35,17 +34,18 @@ def rollout(curr_node):
         child = Node()
         child.state = tmp_state
         child.parent = curr_node
-        curr_node.children.append(child)
-    
-    return rollout(random.choice(curr_node.children))
+        curr_node.children.add(child)
+
+    a = random.choice(list(curr_node.children))
+    return rollout(a)
 
 def expand(curr_node, white):
 
     if len(curr_node.children) == 0:
         return curr_node
 
-    max_ucb = min_ucb = ucbl(curr_node.children[0])
-    max_child = min_child = curr_node.children[0]
+    max_ucb = min_ucb = ucbl(next(iter(curr_node.children)))
+    max_child = min_child = next(iter(curr_node.children))
     
     for child in curr_node.children: 
         t = ucbl(child)
@@ -55,8 +55,10 @@ def expand(curr_node, white):
         if t < min_ucb:
             min_ucb = t
             min_child = child
-
-    return expand(max_child, 0) if white else (min_child, 1)
+    if white:
+        return expand(max_child, 0)
+    else: 
+        return expand(min_child, 1)
 
 def rollback(curr_node, reward):
 
@@ -69,7 +71,7 @@ def rollback(curr_node, reward):
     
     return curr_node
 
-def mcts(curr_node, over, white, iterations=10):
+def mcts(curr_node, over, white, iterations=5):
     if over:
         return -1
     all_moves = [curr_node.state.san(i) for i in curr_node.state.legal_moves]
@@ -87,8 +89,8 @@ def mcts(curr_node, over, white, iterations=10):
     
     while iterations >  0:
 
-        max_ucb = min_ucb = ucbl(curr_node.children[0])
-        max_child = min_child = curr_node.children[0]
+        max_ucb = min_ucb = ucbl(next(iter(curr_node.children)))
+        max_child = min_child = next(iter(curr_node.children))
         
         for child in curr_node.children: 
             t = ucbl(child)
@@ -98,15 +100,17 @@ def mcts(curr_node, over, white, iterations=10):
             if t < min_ucb:
                 min_ucb = t
                 min_child = child
-
-        ex_child = expand(max_child, 0) if white else expand(min_child, 1)
+        if white:
+            ex_child = expand(max_child, 0)
+        else:
+            ex_child = expand(min_child, 1)
         reward, state = rollout(ex_child)
         curr_node = rollback(state, reward)
 
         iterations -= 1
     
-    max_ucb = min_ucb = ucbl(curr_node.children[0])
-    max_child = min_child = curr_node.children[0]
+    max_ucb = min_ucb = ucbl(next(iter(curr_node.children)))
+    max_child = min_child = next(iter(curr_node.children))
     
     for child in curr_node.children: 
         t = ucbl(child)
@@ -118,4 +122,3 @@ def mcts(curr_node, over, white, iterations=10):
             min_child = child
     
     return map_state_move[max_child] if white else map_state_move[min_child] 
-
