@@ -1,31 +1,32 @@
-from mcts import mcts, Node
+from mcts import MCTS
+from node import Node
 import chess
 
 
+def play_game():
+    tree = MCTS()
+    board = new_chess_board()
+    print(board.visualize_board())
+    while True:
+        move = input("enter move ")
+        
+        board = board.make_move(move)
+        print(board.visualize_board())
+        if board.terminal:
+            break
+        # You can train as you go, or only at the beginning.
+        # Here, we train as we go, doing fifty rollouts each turn.
+        for _ in range(50):
+            tree.do_rollout(board)
 
-if __name__ == '__main__':
-    board = chess.Board()   
-    white = 1
-    over = 0 
+        board = tree.choose(board)
+        print(board.visualize_board())
+        if board.terminal:
+            break
 
-    game = chess.pgn.Game()
-    evaluation = []
-    pgn = []
-    sm = 0
-    moves = 0
+def new_chess_board():
+    return Node(chess.Board(), turn=True, winner=None, terminal=False)
 
-    while not board.is_game_over():
-        all_moves = [board.san(i) for i in board.legal_moves]
-        root = Node()
-        root.state = board
-        result = mcts(root, board.is_game_over(), white)
-        print(result)
-        board.push_san(result)
-        pgn.append(result)
-        white ^= 1
-        moves += 1
-    
-    print(board)
-    print(''.join(pgn))
-    print()
-    print(board.result)
+
+if __name__ == "__main__":
+    play_game()
