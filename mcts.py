@@ -9,8 +9,6 @@ import random
 import math
 
 
-
-
 class MCTS:
     ''' Monte carlo tree search class
         https://gist.github.com/qpwo/c538c6f73727e254fdc7fab81024f6e1
@@ -72,4 +70,39 @@ class MCTS:
             return # not a leaf already explored               
         self.children[leaf] = leaf.find_children()
 
+    def _simulate(self, node):
+        " returns the reward for random simulation (till completion) of `node`"
 
+        invert_reward = 1
+        while True:
+            if node.is_terminal():
+                reward = node.reward()
+                return 1-reward if invert_reward else reward
+            node = node.find_random_child()
+
+            invert_reward ^= 1
+    
+    def _backpropogate(self, path, reward):
+        "all the ancestors of leaf recieve the reward"
+
+        for node in reversed(path):
+            self.N[node] += 1
+            self.Q[node] += reward
+            
+            reward = 1-reward # 1 for `me` is 0 for `enemy`
+    
+    def _uct_select(self, node):
+        "select a child of node balancing exploitation and exploration"
+
+        #  all children of node should already be expanded
+        assert all(n in self.children for n in self.children[node])
+
+        log_N_vertex = math.log(self.N[node])
+
+        def uct(n):
+            "Upper confidence bound for trees"
+            return self.Q[n] / self.N[n] + self.exploration_weight * math.sqrt(
+                log_N_vertex / self.N[n]
+            )
+
+        return max(self.children[node], key=uct)
