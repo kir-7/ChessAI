@@ -1,124 +1,75 @@
 import chess
 import chess.pgn
 import chess.engine
+
+from node import Node
+
+from collections import defaultdict
 import random
 import math
 
-class Node:
-    def __init__(self, parent=None):
-        self.state = chess.Board()
-        self.parent = parent
-        self.action = ''
-        self.children = set()
-        self.v = 0
-        self.N = 0
-        self.n = 0
+
+
+
+class MCTS:
+    ''' Monte carlo tree search class
+        https://gist.github.com/qpwo/c538c6f73727e254fdc7fab81024f6e1
+    '''
+
+    def __init__(self, exploration_weight:int=1):
+        self.Q = defaultdict(int)  # collection of rewards for each node
+        self.N = defaultdict(int)  # collection of visits for each node
+        self.children = dict()     # children of each node
+        self.exploration_weight = exploration_weight
+    
+    def choose(self, node):
+        " choose the best successor"
+
+        if node.is_terminal():
+            raise RuntimeError(f"choose called on terminal node: {node}")
+
+        if node not in self.children:
+            return node.find_random_children()
         
-def ucbl(curr_node):
-    return curr_node.v + 2*math.sqrt((math.log(curr_node.N + math.e + 1e-6))/(curr_node.n + 1e-10))
+        def score(node):
+            if self.N[node] == 0:
+                return float('-inf')
+            return self.Q[node]/self.N[node]
 
-def rollout(curr_node):
-    if curr_node.state.is_game_over():
-        board = curr_node.state
-        if board.result() == '1-0':
-            return (1, curr_node)
-        elif board.result() == '0-1':
-            return (-1, curr_node)
-        else :
-            return (0.5, curr_node)
-    all_moves = [curr_node.state.san(i) for i in curr_node.state.legal_moves]
+        return max(self.children[node], key=score)
 
-    for i in all_moves:
-        tmp_state = chess.Board(curr_node.state.fen())
-        tmp_state.push_san(i)
-        child = Node()
-        child.state = tmp_state
-        child.parent = curr_node
-        curr_node.children.add(child)
-
-    a = random.choice(list(curr_node.children))
-    return rollout(a)
-
-def expand(curr_node, white):
-
-    if len(curr_node.children) == 0:
-        return curr_node
-
-    max_ucb = min_ucb = ucbl(next(iter(curr_node.children)))
-    max_child = min_child = next(iter(curr_node.children))
-    
-    for child in curr_node.children: 
-        t = ucbl(child)
-        if t > max_ucb:
-            max_ucb = t
-            max_child = child
-        if t < min_ucb:
-            min_ucb = t
-            min_child = child
-    if white:
-        return expand(max_child, 0)
-    else: 
-        return expand(min_child, 1)
-
-def rollback(curr_node, reward):
-
-    curr_node.n += 1
-    curr_node.v += reward
-
-    while curr_node.parent != None:
-        curr_node.N += 1
-        curr_node = curr_node.parent
-    
-    return curr_node
-
-def mcts(curr_node, over, white, iterations=5):
-    if over:
-        return -1
-    all_moves = [curr_node.state.san(i) for i in curr_node.state.legal_moves]
-    
-    map_state_move = {}
-
-    for i in all_moves:
-        tmp_state = chess.Board(curr_node.state.fen())
-        tmp_state.push_san(i)
-        child = Node()
-        child.state = tmp_state
-        child.parent = curr_node
-        curr_node.children.add(child)
-        map_state_move[child] = i
-    
-    while iterations >  0:
-
-        max_ucb = min_ucb = ucbl(next(iter(curr_node.children)))
-        max_child = min_child = next(iter(curr_node.children))
+    def do_rollout(self, node):
         
-        for child in curr_node.children: 
-            t = ucbl(child)
-            if t > max_ucb:
-                max_ucb = t
-                max_child = child
-            if t < min_ucb:
-                min_ucb = t
-                min_child = child
-        if white:
-            ex_child = expand(max_child, 0)
-        else:
-            ex_child = expand(min_child, 1)
-        reward, state = rollout(ex_child)
-        curr_node = rollback(state, reward)
+        "make the tree one layer better"
 
-        iterations -= 1
-    
-    max_ucb = min_ucb = ucbl(next(iter(curr_node.children)))
-    max_child = min_child = next(iter(curr_node.children))
-    
-    for child in curr_node.children: 
-        t = ucbl(child)
-        if t > max_ucb:
-            max_ucb = t
-            max_child = child
-        if t < min_ucb:
-            min_ucb = t
-            min_child = child
-    
-    return map_state_move[max_child] if white else map_state_move[min_child] 
+        path = self._select(node)
+        leaf = path[-1]
+        self._expand(leaf)
+        reward = self._simulate(leaf)
+        self._backpropagate(path, reward)
+
+    def _select(self, node):
+        "find an unexplored descendent of `node`"
+        path = []
+
+        while True:
+            path.append(node)
+
+            if node not in self.children or node not in self.children[node]:
+                #  node is either terminal or unexplored
+                return path 
+
+            unexplored = self.children[node] - self.children.keys()
+            if unexplored:
+                n = unexplored.pop()
+                path.append(n)
+                return path
+            node = self._uct_select(node)
+
+    def _expand(self, leaf):
+        "Update the `children` dict with the children of `node`"
+        if leaf in self.children:
+            return # not a leaf already explored               
+        self.children[leaf] = leaf.find_children()
+
+
