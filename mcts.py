@@ -1,14 +1,6 @@
-import chess
-import chess.pgn
-import chess.engine
-
-from node import Node
-
 from collections import defaultdict
-import random
 import math
-
-
+import time
 class MCTS:
     ''' Monte carlo tree search class
         https://gist.github.com/qpwo/c538c6f73727e254fdc7fab81024f6e1
@@ -37,7 +29,6 @@ class MCTS:
         return max(self.children[node], key=score)
 
     def do_rollout(self, node):
-        
         "make the tree one layer better"
 
         path = self._select(node)
@@ -45,18 +36,16 @@ class MCTS:
         self._expand(leaf)
         reward = self._simulate(leaf)
         self._backpropagate(path, reward)
-
+        
     def _select(self, node):
         "find an unexplored descendent of `node`"
         path = []
-
         while True:
             path.append(node)
-
             if node not in self.children or node not in self.children[node]:
                 #  node is either terminal or unexplored
                 return path 
-
+            
             unexplored = self.children[node] - self.children.keys()
             if unexplored:
                 n = unexplored.pop()
@@ -64,25 +53,25 @@ class MCTS:
                 return path
             node = self._uct_select(node)
 
-    def _expand(self, leaf):
+    def _expand(self, node):
         "Update the `children` dict with the children of `node`"
-        if leaf in self.children:
+        if node in self.children:
             return # not a leaf already explored               
-        self.children[leaf] = leaf.find_children()
+        self.children[node] = node.find_children()
 
     def _simulate(self, node):
-        " returns the reward for random simulation (till completion) of `node`"
-
+        "returns the reward for random simulation (till completion) of `node`"
+        
         invert_reward = 1
         while True:
             if node.is_terminal():
                 reward = node.reward()
                 return 1-reward if invert_reward else reward
-            node = node.find_random_child()
-
+            node = node.find_random_child() 
+            
             invert_reward ^= 1
     
-    def _backpropogate(self, path, reward):
+    def _backpropagate(self, path, reward):
         "all the ancestors of leaf recieve the reward"
 
         for node in reversed(path):
