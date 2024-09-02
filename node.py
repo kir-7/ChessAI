@@ -45,9 +45,9 @@ class Node:
         if self.winner and self.turn:
             # It's your turn and you've already won. Should be impossible.
             raise RuntimeError(f"reward called on unreachable board {self}")
-        if self.turn and (not self.winner):
+        if self.turn and (self.winner == False):
             return 0  # Your opponent has just won. Bad.
-        if (not self.turn) and self.winner:
+        if (not self.turn) and self.winner == True:
             return 1
         if self.winner is None:
             return 0.5 # board is a tie        
@@ -65,10 +65,10 @@ class Node:
     
     def _find_winner(self, board):
         "Returns None if no winner, True if we win, else False"
-        if board.result()=='0-1':
-            return False  ## it's your turn to move and it's a checkmate, you lost
+        if board.result()=='0-1':  # i play against the tree and i am moving first so 0-1 means white lost, i lost the tree wins
+            return True  ## it's your turn to move and it's a checkmate, you lost
         if board.result() == '1-0':
-            return True   ## it's your opponent's turn and its checkmate, you won
+            return False   ## it's your opponent's turn and its checkmate, you won
 
         return None  ## it's either a draw or match in progress
 

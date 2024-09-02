@@ -1,6 +1,7 @@
 from collections import defaultdict
 import math
 import time
+from tqdm import tqdm
 class MCTS:
     ''' Monte carlo tree search class
         https://gist.github.com/qpwo/c538c6f73727e254fdc7fab81024f6e1
@@ -11,7 +12,7 @@ class MCTS:
         self.N = defaultdict(int)  # collection of visits for each node
         self.children = dict()     # children of each node
         self.exploration_weight = exploration_weight
-    
+
     def choose(self, node):
         " choose the best successor"
 
@@ -28,9 +29,14 @@ class MCTS:
 
         return max(self.children[node], key=score)
 
+    def run_simulation(self, n, board):
+        
+        for _ in tqdm(range(n)):
+            self.do_rollout(board)
+        
+
     def do_rollout(self, node):
         "make the tree one layer better"
-
         path = self._select(node)
         leaf = path[-1]
         self._expand(leaf)
@@ -38,25 +44,25 @@ class MCTS:
         self._backpropagate(path, reward)
         
     def _select(self, node):
-        "find an unexplored descendent of `node`"
+        "Find an unexplored descendent of `node`"
         path = []
         while True:
             path.append(node)
-            if node not in self.children or node not in self.children[node]:
-                #  node is either terminal or unexplored
-                return path 
-            
+            if node not in self.children or not self.children[node]:
+                # node is either unexplored or terminal
+                return path
             unexplored = self.children[node] - self.children.keys()
             if unexplored:
                 n = unexplored.pop()
                 path.append(n)
                 return path
-            node = self._uct_select(node)
+            node = self._uct_select(node)  # descend a layer deeper
 
     def _expand(self, node):
         "Update the `children` dict with the children of `node`"
         if node in self.children:
-            return # not a leaf already explored               
+            return # leaf already explored
+                           
         self.children[node] = node.find_children()
 
     def _simulate(self, node):
