@@ -1,6 +1,6 @@
 import chess
 import random
-
+import ChessEnv
 
 class Node:
     """
@@ -14,15 +14,6 @@ class Node:
         self.winner = winner
         self.terminal = terminal
 
-    def find_children(self):
-        "All possible successors of this board state"
-        
-        if self.terminal:
-            return set() # cant generate children if game finished
-        
-        # Otherwise generate all possible next moves
-        children = [self.make_move(self.board.san(move)) for move in self.board.legal_moves]
-        return set(children)
 
     def find_random_child(self):
         "Random successor of this board state (for more efficient simulation)"
