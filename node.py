@@ -9,9 +9,8 @@ class Node:
     Could be e.g. a chess or checkers board state.
     
     """
-    def __init__(self, board, turn, winner, terminal) -> None:
+    def __init__(self, board,  winner, terminal) -> None:
         self.board = board
-        self.turn = turn
         self.winner = winner
         self.terminal = terminal
 
@@ -38,19 +37,19 @@ class Node:
         "Returns True if the node has no children"
         return self.terminal
     
-    def reward(self):
+    def reward(self, player):
         "Assumes `self` is terminal node. 1=win, 0=loss, .5=tie, etc"
+
         if not self.terminal:
             raise RuntimeError(f"reward called on nonterminal board {self}")
-        if self.winner and self.turn:
-            # It's your turn and you've already won. Should be impossible.
-            raise RuntimeError(f"reward called on unreachable board {self}")
-        if self.turn and (self.winner == False):
-            return 0  # Your opponent has just won. Bad.
-        if (not self.turn) and self.winner == True:
-            return 1
-        if self.winner is None:
-            return 0.5 # board is a tie        
+        
+        if self.winner == player:
+            return 1 ## you won the match
+        elif self.winner != player:
+            return 0  ## you lost the match
+        else:
+            return 0.5 ## it's a draw
+        
         # The winner is neither True, False, nor None
         raise RuntimeError(f"board has unknown winner type {self.winner}")
 
@@ -58,19 +57,20 @@ class Node:
 
         board = chess.Board(self.board.fen())
         board.push_san(move)
-        turn = self.turn ^ 1
         winner = self._find_winner(board)
         is_terminal = board.is_game_over()
-        return Node(board, turn, winner, is_terminal)
+        return Node(board, winner, is_terminal)
     
     def _find_winner(self, board):
         "Returns None if no winner, True if we win, else False"
-        if board.result()=='0-1':  # i play against the tree and i am moving first so 0-1 means white lost, i lost the tree wins
-            return True  ## it's your turn to move and it's a checkmate, you lost
-        if board.result() == '1-0':
-            return False   ## it's your opponent's turn and its checkmate, you won
-
-        return None  ## it's either a draw or match in progress
+    
+        outcome = board.outcome()
+        if outcome == None:
+            return None
+        else:
+            if outcome.winner == None:
+                return None
+            return outcome.winner
 
     def __repr__(self):
         return str(self.board)

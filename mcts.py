@@ -7,10 +7,11 @@ class MCTS:
         https://gist.github.com/qpwo/c538c6f73727e254fdc7fab81024f6e1
     '''
 
-    def __init__(self, exploration_weight:int=1):
+    def __init__(self, player=False, exploration_weight:int=1):
         self.Q = defaultdict(int)  # collection of rewards for each node
         self.N = defaultdict(int)  # collection of visits for each node
         self.children = dict()     # children of each node
+        self.player = player
         self.exploration_weight = exploration_weight
 
     def choose(self, node):
@@ -68,14 +69,14 @@ class MCTS:
     def _simulate(self, node):
         "returns the reward for random simulation (till completion) of `node`"
         
-        invert_reward = 1
+        invert_reward = False if node.board.turn == self.player else True
         while True:
             if node.is_terminal():
-                reward = node.reward()
+                reward = node.reward(self.player)
                 return 1-reward if invert_reward else reward
             node = node.find_random_child() 
             
-            invert_reward ^= 1
+            invert_reward = not invert_reward
     
     def _backpropagate(self, path, reward):
         "all the ancestors of leaf recieve the reward"

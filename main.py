@@ -11,7 +11,7 @@ from tqdm import tqdm
 
 
 def play_game():
-    tree = MCTS()
+    tree = MCTS(player=chess.BLACK)
     board = new_chess_board()
     print(board)
 
@@ -28,8 +28,9 @@ def play_game():
         print('----------------')
         if board.terminal:
             break
+        
+        assert tree.player == board.board.turn 
 
-        board.turn = True
         # You can train as you go, or only at the beginning.
         # Here, we train as we go, doing fifty rollouts each turn.
         tree.run_simulation(50, board)   ## as we expand the tree the possibilities increase which means the time taken 
@@ -52,7 +53,7 @@ def play_game():
     #        are defined to play this way, if later it is decided that tree plays as white then need to change these functions or error 
 
 def new_chess_board():
-    return Node(chess.Board(), turn=True, winner=None, terminal=False)  # we are playing against mcts so turn will be true for tree and if
+    return Node(chess.Board(), winner=None, terminal=False)  # we are playing against mcts so turn will be true for tree and if
                                                                         # winner is False then we won else board won
 
 
