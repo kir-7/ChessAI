@@ -51,6 +51,9 @@ CONVOLUTION_FILTERS = 256
 # ==> First train a small NN, then optimize longer with a larger NN.
 AMOUNT_OF_RESIDUAL_BLOCKS = 19
 
+ACTIVATION = "GELU"
+NORMALIZATION = "Batch"
+
 # where to save the model
 MODEL_FOLDER = os.environ.get("MODEL_FOLDER" ,'./models')
 
