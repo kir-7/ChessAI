@@ -77,7 +77,10 @@ class RLModel(nn.Module):
 
     def forward(self, x):
         
-        # x is of shape (B, C, W, H)
+        # x is of shape (B, H, W, C)
+
+        x = x.view(-1, self.input_dim[2], self.input_dim[1], self.input_dim[0])
+
         x = self.initial_convolution(x)
 
         for conv, act in zip(self.convolutions, self.activations):

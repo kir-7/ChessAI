@@ -8,7 +8,7 @@ from model import RLModel
 
 class Agent:
 
-    def __init__(self, player=chess.BLACK, model_path=None):
+    def __init__(self, player=chess.BLACK, model_path=None, compile = False):
         
         if model_path is not None:
             
@@ -16,6 +16,9 @@ class Agent:
             self.model.load_state_dict(torch.load(model_path)) 
         else:
             self.model = self.build_model()
+        if compile:
+            
+            self.model = torch.compile(self.model)
         
         self.player = player
 
@@ -48,6 +51,12 @@ class Agent:
         '''
         Predict the value head an policy head for the given state
         '''
+
+        # TODO: needs to properly set the model.train() and model.eval() as well as check for gradients 
+
+        if not torch.is_tensor(data):
+            data = torch.Tensor(data)
+            
         p, v = self.model(data)
-        return p.numpy(), v[0][0]
+        return p, v
 

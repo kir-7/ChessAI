@@ -4,7 +4,8 @@ import chess
 import random
 import time
 from tqdm import tqdm
-
+from agent import Agent
+from ChessEnv import ChessEnv
 ## if we train the mcts before we start the process
 ## assuming an average game lasts for 200 moves 
 ## we are simulating 50 per move so 50*200 = 10000 simulations before the process should do
@@ -58,5 +59,12 @@ def new_chess_board():
 
 
 if __name__ == "__main__":
-    final_board = play_game()
-    print(final_board.outcome())
+    # final_board = play_game()
+    # print(final_board.outcome())
+    agent = Agent(chess.WHITE)
+    tree = MCTS(agent, agent.player)
+
+    board = new_chess_board()
+    # print(ChessEnv.state_to_input(board.board.fen()).shape)
+    tree.run_simulation(10, board)
+

@@ -1,5 +1,7 @@
 import os
 
+# https://github.com/zjeffer/chess-deep-rl
+
 # ============= MCTS =============
 SIMULATIONS_PER_MOVE = int(os.environ.get("SIMULATIONS_PER_MOVE", 400))
 
