@@ -2,6 +2,8 @@ import chess
 import numpy as np
 import config
 
+## taken from: https://github.com/zjeffer/chess-deep-rl/tree/main
+
 class ChessEnv:
     def __init__(self, fen: str = chess.STARTING_FEN):
         """

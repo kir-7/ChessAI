@@ -49,10 +49,11 @@ def play_game():
     print(f"winner:{board.winner}, turn:{board.turn}")
     return board
 
-    ## TODO: currently hard coded that tree is playing as black and i am playing as white so every turn i make a move and make it again 
-    #        the tree's turn to play by setting board.turn = True then the board plays as black and the reward and _find_winner functions
-    #        are defined to play this way, if later it is decided that tree plays as white then need to change these functions or error 
+    # TODO: currently loss function, the main updation of model parameters, and the self play are not implemented so for now in mcts we are 
+    #       leaving self.P to have values as tensors but ultimately after this we need to decide if we need to store the tensors or just the 
+    #       floats are enough  
 
+    
 def new_chess_board():
     return Node(chess.Board(), winner=None, terminal=False)  # we are playing against mcts so turn will be true for tree and if
                                                                         # winner is False then we won else board won
@@ -66,5 +67,5 @@ if __name__ == "__main__":
 
     board = new_chess_board()
     # print(ChessEnv.state_to_input(board.board.fen()).shape)
-    tree.run_simulation(10, board)
+    tree.run_simulation(2, board)
 
