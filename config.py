@@ -56,6 +56,9 @@ AMOUNT_OF_RESIDUAL_BLOCKS = 19
 ACTIVATION = "GELU"
 NORMALIZATION = "Batch"
 
+VALUE_WEIGHT = 0.5
+POLICY_WEIGHT = 0.5
+
 # where to save the model
 MODEL_FOLDER = os.environ.get("MODEL_FOLDER" ,'./models')
 

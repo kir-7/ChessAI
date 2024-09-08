@@ -23,6 +23,11 @@ def get_size(model):
     return size_model, (size_model / 8e6)
 
 class RLModel(nn.Module):
+    '''
+    the model works by playing against another model and the better model in the end will become the best model
+    so far and the next new model will be trained by playing against this best model
+    '''
+
     def __init__(self, input_dim, output_dim):
         
         super().__init__()
@@ -70,12 +75,18 @@ class RLModel(nn.Module):
                                           GELU(),
                                           Linear(256, self.output_dim[1]),  # the outsput size of value head is (1)
                                           Tanh())
+    
+        self.policy_weight = config.POLICY_WEIGHT
+        self.value_weight = config.VALUE_WEIGHT
 
 
     def reset_parameters(self):
         pass
 
-    def forward(self, x):
+    def forward(self, x, y=None):
+
+        # y is the true outputs of the model that we get from self play. 
+        # it is tuple where y[0] is policy outputs and y[1] is the value outputs     
         
         # x is of shape (B, H, W, C)
 
@@ -91,10 +102,31 @@ class RLModel(nn.Module):
         
         value = self.value_head(x)
 
-        return (policy, value)
+        logits = (policy, value)
+        
+        loss = None
+
+        if y is not None:  # if the y values for the policy and value heads are proided then calculate the loss
+            loss = self.loss(policy, y[0], value, y[1])
+        
+        return logits, loss
+    
+
+    def loss(self, y_true_policy, y_pred_policy, y_true_value, y_pred_value):
+        '''
+        Uses cross entropy loss for policy head and mean sqaured error loss for value head the data is created 
+        through high number of self plays between the models. 
+        '''
+
+        policy_loss = F.cross_entropy(y_pred_policy, y_true_policy)
+        value_loss = F.mse_loss(y_pred_value, y_true_value)
+    
+        return self.policy_weight * policy_loss + self.value_weight*value_loss 
+    
 
 
 if __name__ == "__main__":
+
 
     model = RLModel(config.INPUT_SHAPE, config.OUTPUT_SHAPE)
 
