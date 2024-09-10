@@ -3,6 +3,7 @@ import chess
 import torch
 import config
 from mcts import MCTS
+from node import Node
 
 from model import RLModel
 
@@ -19,6 +20,8 @@ class Agent:
         if compile:
             
             self.model = torch.compile(self.model)
+        
+        self.root = Node(chess.Board())
         
         self.player = player
 
@@ -38,7 +41,11 @@ class Agent:
         '''
         
         print(f"Running {n} simulations...")
-        self.mcts.run_simulation(n)
+        self.mcts.run_simulation(n, self.root)
+    
+    def get_moves(self):
+        return self.mcts.get_possible_moves(self.root)
+    
 
     def save_model(self, path):
         '''

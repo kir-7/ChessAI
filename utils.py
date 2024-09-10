@@ -60,5 +60,9 @@ def train(model:nn.Module, data:np.ndarray, optimizer, batch_size, return_dict=F
     
     pass
 
-def test():
+def eval():
      pass
+
+def run_experiment():
+    pass
+

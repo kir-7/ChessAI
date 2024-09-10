@@ -34,17 +34,24 @@ class MCTS:
         if node not in self.children:
             return node.find_random_children()
         
-        def score(node):
-            if self.N[node] == 0:
-                return float('-inf')
-            return self.Q[node]/self.N[node]
+        children = self.children[node]
 
-        return max(self.children[node], key=score)
+        sum_of_visits = sum(self.N[child] for child in children)
+        probs = [self.N[child]/sum_of_visits for child in children]
 
-    def run_simulation(self, n, board):
+        if self.stochastic:
+            return np.randm.choice(children, p=probs)
+        else:
+            return children[np.argmax(probs)]
+        
+    def get_possible_moves(self, node):
+        #  will return all the children nodes that are reachable from node
+        return self.children[node]
+
+    def run_simulation(self, n, node):
         
         for _ in tqdm(range(n)):
-            self.do_rollout(board)
+            self.do_rollout(node)
         
 
     def do_rollout(self, node):
@@ -139,6 +146,7 @@ class MCTS:
     def _select(self, node):
         "Find an unexplored descendent of `node`"
         
+        root = node
         path = []
 
         while True:
@@ -147,7 +155,7 @@ class MCTS:
                 # node is either unexplored or terminal
                 return path
             
-            node = self._uct_select(node)  # descend a layer deeper
+            node = self._uct_select(node, root)  # descend a layer deeper
                     
 
     def _expand_simulate(self, node):
@@ -200,14 +208,14 @@ class MCTS:
             self.N[node] += 1
             self.Q[node] += reward
     
-    def _uct_select(self, node):
+    def _uct_select(self, node, root):
         "select a child of node balancing exploitation and exploration"
 
         #  all children of node should already be expanded
 
         noise = [1 for _ in range(len(self.children[node]))]
 
-        if self.stochastic and node == self.root:
+        if self.stochastic and node == root:
             noise = np.random.dirichlet([config.DIRICHLET_NOISE]*len(self.children[node]))
 
         best_child = None
