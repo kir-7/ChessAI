@@ -35,14 +35,15 @@ class MCTS:
             return node.find_random_children()
         
         children = self.children[node]
+        
 
-        sum_of_visits = sum(self.N[child] for child in children)
-        probs = [self.N[child]/sum_of_visits for child in children]
-
+        sum_of_visits = sum(self.N[child] for child, _ in children)
+        probs = [self.N[child]/sum_of_visits for child, _ in children]
+        
         if self.stochastic:
-            return np.randm.choice(children, p=probs)
+            return np.random.choice([child for child, _ in children], p=probs)
         else:
-            return children[np.argmax(probs)]
+            return [child for child, _ in children][np.argmax(probs)]
         
     def get_possible_moves(self, node):
         #  will return all the children nodes that are reachable from node
@@ -186,6 +187,7 @@ class MCTS:
         # map probabilities to moves, this also filters out invalid moves
         # returns a dictionary of moves and their probabilities
         # credis to the original author for ChessEnv and probabilties_to_actions and map_valid_move functions:https://github.com/zjeffer/chess-deep-rl/tree/main
+        
         actions = self.probabilities_to_actions(p, board.fen())
 
         reward = v[0].item()
@@ -195,7 +197,7 @@ class MCTS:
             # make the move and get the new board
             child = node.make_move(board.san(action))
             # add a new child node with the new board, the action taken and its prior probability
-            children.add(child) 
+            children.add((child, action)) 
             self.P[child] = actions[action.uci()]
         self.children[node] = children
         
@@ -221,7 +223,7 @@ class MCTS:
         best_child = None
         best_score = -np.inf
 
-        for i, child in enumerate(self.children[node]):
+        for i, (child, action_) in enumerate(self.children[node]):
             ucb = self.exploration_weight * (self.P[child] * noise[i]) * (math.sqrt(self.N[node]) / (1 + self.N[child]))
             Q = self.Q[child]/(self.N[child] + 1)
             if node.board.turn == self.player:

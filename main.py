@@ -65,7 +65,16 @@ if __name__ == "__main__":
     agent = Agent(chess.WHITE)
     tree = MCTS(agent, agent.player)
 
-    board = new_chess_board()
     # print(ChessEnv.state_to_input(board.board.fen()).shape)
-    tree.run_simulation(2, board)
-
+    agent.run_simulaions(2)
+    moves = agent.get_moves()
+    sum_move_visits = sum(agent.mcts.N[node] for node, action in moves)
+        # create dictionary of moves and their probabilities
+    search_probabilities = {
+        action.uci(): agent.mcts.N[node] / sum_move_visits for node, action in moves}
+    print(moves)
+    print()
+    print(sum_move_visits, "\n")
+    print(search_probabilities)
+        
+    

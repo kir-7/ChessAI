@@ -9,7 +9,7 @@ from model import RLModel
 
 class Agent:
 
-    def __init__(self, player=chess.BLACK, model_path=None, compile = False):
+    def __init__(self, player=chess.BLACK, model_path=None, compile = False, stochastic:bool=True):
         
         if model_path is not None:
             
@@ -21,11 +21,11 @@ class Agent:
             
             self.model = torch.compile(self.model)
         
-        self.root = Node(chess.Board())
+        self.root = Node(chess.Board(), winner=None, terminal=False)
         
         self.player = player
 
-        self.mcts = MCTS(self, player=self.player, exploration_weight=config.EXPLORATION_WEIGHT)
+        self.mcts = MCTS(self, player=self.player, exploration_weight=config.EXPLORATION_WEIGHT, stochastic=stochastic)
 
 
     def build_model(self):
@@ -45,6 +45,9 @@ class Agent:
     
     def get_moves(self):
         return self.mcts.get_possible_moves(self.root)
+
+    def get_best_move(self):
+        return self.mcts.choose(self.root)
     
 
     def save_model(self, path):
@@ -64,6 +67,6 @@ class Agent:
         if not torch.is_tensor(data):
             data = torch.Tensor(data)
             
-        p, v = self.model(data)
+        (p, v), loss = self.model(data)
         return p, v
 

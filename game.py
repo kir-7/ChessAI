@@ -2,6 +2,11 @@ from mcts import MCTS
 from ChessEnv import ChessEnv
 from agent import Agent
 import config
+import utils
+
+import numpy as np
+import os
+import uuid
 
 class Game:
     '''
@@ -27,7 +32,8 @@ class Game:
     def get_winner(result : str):
         return 1 if result == "1-0" else - 1 if result == "0-1" else 0
 
-    def play_game(self):
+    @utils.time_function
+    def play_game(self, stochastic:bool =True):
         '''
         Play one game from the starting position, and save it to memory.
         Keep playing moves until either the game is over, or it has reached the move limit.
@@ -36,7 +42,31 @@ class Game:
         self.reset()
         self.memory.append([])
 
-        counter, full_game = 0, True
+        counter, previous_nodes, full_game = 0, (None, None), True
+
+        while not self.env.board.is_game_over():
+            # play one move (previous move is used for updating the MCTS tree)
+            previous_nodes = self.play_move(stochastic=stochastic, previous_moves=previous_nodes)
+
+            # end if the game drags on too long
+            counter += 1
+            if counter > config.MAX_GAME_MOVES or self.env.board.is_repetition(3):
+                # estimate the winner based on piece values
+                winner = ChessEnv.estimate_winner(self.env.board)
+                full_game = False
+                break
+        if full_game:
+            # get the winner based on the result of the game
+            winner = Game.get_winner(self.env.board.result())
+            
+        # save game result to memory for all games
+        for index, element in enumerate(self.memory[-1]):
+            self.memory[-1][index] = (element[0], element[1], winner)
+
+        # save memory to file
+        self.save_game(name="game", full_game=full_game)
+
+        return winner
 
         # TODO TODO TODO TODO TODO TODO TODO TODO TODO TODO
 
@@ -45,7 +75,7 @@ class Game:
         #        is stored in the data that the NNet trains on so impl carefully
 
 
-    def play_one_move(self, stochastic:bool=True, previous_moves=(None, None), save_moves=True):
+    def play_one_move(self, stochastic:bool=True, previous_nodes=(None, None), save_moves=True):
         """
         Play one move. If stochastic is True, the move is chosen using a probability distribution.
         Otherwise, the move is chosen based on the highest N (deterministically).
@@ -58,18 +88,13 @@ class Game:
         #  since my impl of mcts doesn't use a root node it is belived that current_player's mcts tree can be started from any node
         # this impl differs from referenced impl so need to test this thoroughly
 
-        if previous_moves[0] is None or previous_moves[1] is None:
+        if previous_nodes[0] is None or previous_nodes[1] is None:
             # create new tree with root node == current board
             current_player.mcts = MCTS(current_player, player=current_player.player, stochastic=stochastic)
         else:
             # change the root node to the node after playing the two previous moves
             try:
-
-                # TODO TODO TODO TODO TODO TODO TODO TODO TODO TODO
-
-                node = current_player.mcts.root.get_edge(previous_moves[0].action).output_node
-                node = node.get_edge(previous_moves[1].action).output_node
-                current_player.root = node
+                current_player.root = previous_nodes[1]
 
             except AttributeError:
                 current_player.mcts = MCTS(current_player, player=current_player.player, stochastic=stochastic)
@@ -77,13 +102,45 @@ class Game:
         current_player.run_simulaions(n=config.SIMULATIONS_PER_MOVE)
 
         moves = current_player.get_moves()
+        
+        if save_moves:
+            self.save_to_memory(self.env.board.fen(), moves)
 
+        best_move = current_player.get_best_move()
+        
+        # self.env.step(best_move.action)
+        self.env.board = best_move.board  # instead of doing as shown above we will directly change the board of env fro best_move impl difference, check properly
 
+        #switch turn
+        self.turn = not self.turn
+        return (previous_nodes[1], best_move)
+    
 
-    def save_to_memry(self):
-        pass
+    def save_to_memory(self, state, moves) -> None:
+        """
+        Append the current state and move probabilities to the internal memory.
+        """
+        current_player = self.white if self.turn else self.black
 
-    def save_game(self):
-        pass
+        sum_move_visits = sum(current_player.mcts.N[node] for node, action in moves)
+        # create dictionary of moves and their probabilities
+        search_probabilities = {
+            action.uci(): current_player.mcts.N[node] / sum_move_visits for node, action in moves}
+        
+        # winner gets added after game is over
+        
+        self.memory[-1].append((state, search_probabilities, None))
+
+    def save_game(self, name: str = "game", full_game: bool = False) -> None:
+        """
+        Save the internal memory to a .npy file.
+        """
+        # the game id consist of game + datetime
+        game_id = f"{name}-{str(uuid.uuid4())[:8]}"
+        if full_game:
+            # if the game result was not estimated, save the game id to a seperate file (to look at later)
+            with open("full_games.txt", "a") as f:
+                f.write(f"{game_id}.npy\n")
+        np.save(os.path.join(config.MEMORY_DIR, game_id), self.memory[-1])
 
         

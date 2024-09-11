@@ -1,10 +1,11 @@
-import torch
 from torch import nn
 
 import chess
 from mapper import Mapping
 import numpy as np
 from chess import Move
+
+import time
 
 def move_to_plane_index(move: str, board: chess.Board):
     """"
@@ -51,6 +52,18 @@ def moves_to_output_vector(moves: dict, board: chess.Board) -> np.ndarray:
         vector[plane_index, row, col] = moves[move]
     return np.asarray(vector)
 
+def time_function(func):
+    """
+    Decorator to time a function
+    """
+    def wrap_func(*args, **kwargs):
+        t1 = time.time()
+        result = func(*args, **kwargs)
+        t2 = time.time()
+        print(f'Function {func.__name__!r} executed in {(t2-t1):.4f}s')
+        return result
+    return wrap_func
+
 def train(model:nn.Module, data:np.ndarray, optimizer, batch_size, return_dict=False):
     '''the main train function that will train the model
         model is the model to be trained
@@ -65,4 +78,3 @@ def eval():
 
 def run_experiment():
     pass
-
