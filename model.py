@@ -6,21 +6,7 @@ from torch.nn import Linear,  GELU, Conv2d, BatchNorm2d, Flatten, Sigmoid, Tanh
 import numpy as np
 
 import config
-
-def get_params(model):
-    total_param = 0
-    for param in model.parameters():
-        total_param += np.prod(list(param.data.size()))
-    return total_param
-
-def get_size(model):
-    size_model = 0
-    for param in model.parameters():
-        if param.data.is_floating_point():
-            size_model += param.numel() * torch.finfo(param.data.dtype).bits
-        else:
-            size_model += param.numel() * torch.iinfo(param.data.dtype).bits
-    return size_model, (size_model / 8e6)
+from utils import get_params, get_size
 
 class RLModel(nn.Module):
     '''

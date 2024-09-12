@@ -138,6 +138,7 @@ class MCTS:
         for thread in threads:
             thread.join()
 
+        
         for move, plane_index, col, row in self.outputs:
             # mask[plane_index][col][row] = 1
             actions[move.uci()] = probabilities[plane_index][col][row]

@@ -6,6 +6,7 @@ import time
 from tqdm import tqdm
 from agent import Agent
 from ChessEnv import ChessEnv
+from game import Game
 ## if we train the mcts before we start the process
 ## assuming an average game lasts for 200 moves 
 ## we are simulating 50 per move so 50*200 = 10000 simulations before the process should do
@@ -62,19 +63,21 @@ def new_chess_board():
 if __name__ == "__main__":
     # final_board = play_game()
     # print(final_board.outcome())
-    agent = Agent(chess.WHITE)
-    tree = MCTS(agent, agent.player)
-
+    white = Agent(chess.WHITE)
+    black = Agent(chess.BLACK)
     # print(ChessEnv.state_to_input(board.board.fen()).shape)
-    agent.run_simulaions(2)
-    moves = agent.get_moves()
-    sum_move_visits = sum(agent.mcts.N[node] for node, action in moves)
-        # create dictionary of moves and their probabilities
-    search_probabilities = {
-        action.uci(): agent.mcts.N[node] / sum_move_visits for node, action in moves}
-    print(moves)
-    print()
-    print(sum_move_visits, "\n")
-    print(search_probabilities)
+    # agent.run_simulaions(2)
+    # moves = agent.get_moves()
+    # sum_move_visits = sum(agent.mcts.N[node] for node, action in moves)
+    #     # create dictionary of moves and their probabilities
+    # search_probabilities = {
+    #     action.uci(): agent.mcts.N[node] / sum_move_visits for node, action in moves}
+    # print(moves)
+    # print()
+    # print(sum_move_visits, "\n")
+    # print(search_probabilities)
         
+    game = Game(ChessEnv(), white, black)
+    game.play_game(True)
+    
     
