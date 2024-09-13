@@ -7,7 +7,7 @@ import utils
 import numpy as np
 import os
 import uuid
-
+import chess
 class Game:
     '''
      the main class that runs the game. 
@@ -42,13 +42,12 @@ class Game:
         self.reset()
         self.memory.append([])
 
-        counter, previous_nodes, full_game = 0, (None, None), True
+        counter, previous_node, full_game = 0, None, True
         print("started to play the game.....")
 
         while not self.env.board.is_game_over():
             # play one move (previous move is used for updating the MCTS tree)
-            previous_nodes = self.play_one_move(stochastic=stochastic, previous_nodes=previous_nodes)
-            print(f"move:{counter}")
+            previous_node = self.play_one_move(stochastic=stochastic, previous_node=previous_node)
             # end if the game drags on too long
             counter += 1
             if counter > config.MAX_GAME_MOVES or self.env.board.is_repetition(3):
@@ -77,30 +76,27 @@ class Game:
         #        is stored in the data that the NNet trains on so impl carefully
 
 
-    def play_one_move(self, stochastic:bool=True, previous_nodes=(None, None), save_moves=True):
+    def play_one_move(self, stochastic:bool=True, previous_node=None, save_moves=True):
         """
         Play one move. If stochastic is True, the move is chosen using a probability distribution.
         Otherwise, the move is chosen based on the highest N (deterministically).
         The previous moves are used to reuse the MCTS tree (if possible): the root node is set to the
         node found after playing the previous moves in the current tree.
+
+        in this impl we dont need to explicitly mention the root because the agent will automatically always use the
+        mcts it already has 
+
         """
 
         current_player = self.white if self.turn else self.black
 
         #  since my impl of mcts doesn't use a root node it is belived that current_player's mcts tree can be started from any node
         # this impl differs from referenced impl so need to test this thoroughly
-
-        if previous_nodes[0] is None or previous_nodes[1] is None:
-            # create new tree with root node == current board
-            current_player.mcts = MCTS(current_player, player=current_player.player, stochastic=stochastic)
+        if previous_node is None:
+            current_player.set_root(chess.Board())
         else:
-            # change the root node to the node after playing the two previous moves
-            try:
-                current_player.root = previous_nodes[1]
+            current_player.root = previous_node
 
-            except AttributeError:
-                current_player.mcts = MCTS(current_player, player=current_player.player, stochastic=stochastic)
-        
         current_player.run_simulaions(n=config.SIMULATIONS_PER_MOVE)
 
         moves = current_player.get_moves()
@@ -115,7 +111,8 @@ class Game:
 
         #switch turn
         self.turn = not self.turn
-        return (previous_nodes[1], best_move)
+
+        return (best_move)
     
 
     def save_to_memory(self, state, moves) -> None:
@@ -149,8 +146,9 @@ class Game:
             with open("full_games.txt", "a") as f:
                 f.write(f"{game_id}.npy\n")
         
-        print(self.memory[-1])
-        print(len(self.memory[-1]))
-        # np.save(os.path.join(config.MEMORY_DIR, game_id), self.memory[-1])
+        if not os.path.exists(config.MEMORY_DIR):
+            os.makedirs(config.MEMORY_DIR)
+        
+        np.save(os.path.join(config.MEMORY_DIR, game_id), self.memory[-1])
 
         

@@ -16,11 +16,17 @@ import utils
 ## https://github.com/zjeffer/chess-deep-rl
 
 class Trainer:
-    def __init__(self, model: nn.Model, optimizer):
+    def __init__(self, model: nn.Module, optimizer, device='cpu'):
         self.model = model
         self.batch_size = config.BATCH_SIZE
-        self.optimizer = optimizer
         self.lr = config.LEARNING_RATE
+
+        if optimizer is None:
+            self.optimizer = torch.optim.AdamW(self.model.parameters(), self.lr)
+        else:
+            self.optimizer = optimizer
+
+        self.device = device
 
     def sample_batch(self, data):
         if self.batch_size > len(data):
@@ -40,14 +46,29 @@ class Trainer:
             # for every position in the batch, get the output probablity vector and value of the state
             board = chess.Board(position[0])
             moves = utils.moves_to_output_vector(position[1], board)
+
             y_probs.append(moves)
             y_value.append(position[2])
-        return X, (np.array(y_probs).reshape(len(y_probs), config.OUTPUT_SHAPE[0]), np.array(y_value))
+        
+        X = np.array(X)
+
+        return torch.Tensor(X), (torch.Tensor(y_probs).reshape(len(y_probs), config.OUTPUT_SHAPE[0]), torch.Tensor(y_value).view(len(y_value), config.OUTPUT_SHAPE[1]))
 
     def train_batch(self, X, y_probs, y_value):
-        return utils.train(self.model, {"y_true_policy":y_probs,
-                                        "y_true_value":y_value,
-                                        "X":X}, self.optimizer, self.batch_size, return_dict=True) 
+        
+        self.model.train()
+        
+        
+        X = X.to(self.device)
+        y_probs = y_probs.to(self.device)
+        y_value = y_value.to(self.device)
+
+        self.optimizer.zero_grad()
+        logits, loss, policy_loss, value_loss = self.model(X, y=(y_probs, y_value))
+        loss.backward()
+        self.optimizer.step()
+
+        return {"loss":loss, 'policy_head_loss':policy_loss, 'value_head_loss':value_loss}
     
     def train_all_data(self, data):
         """
@@ -58,13 +79,7 @@ class Trainer:
         print("Splitting data into labels and target...")
         X, y = self.split_Xy(data)
         print("Training batches...")
-        history = utils.train(self.model, 
-                              {"y_true_policy":y[0],
-                                "y_true_value":y[1],
-                                "X":X},
-                            self.optimizer,
-                            self.batch_size,
-                            return_dict=True)
+        history = self.train_batch(X, y[0], y[1])
 
         return history
 

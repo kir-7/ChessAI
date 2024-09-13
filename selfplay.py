@@ -35,16 +35,23 @@ def setup(starting_position: str = chess.STARTING_FEN, stochastic=True) -> Game:
         black = Agent(chess.BLACK, stochastic=stochastic)
     return Game(env=env, white=white, black=black)
 
-def self_play(local_predictions=False):
+def self_play(stochastic=True):
     """
     Continuously play games against itself
     """
-    game = setup(local_predictions=local_predictions)
+    game = setup(stochastic=stochastic)
 
     # play games continuously
+    count = 0
     while True:
-        game.play_one_game(stochastic=True)
+        print(f"number of games played:{count}")
+        game.play_game(stochastic=stochastic)
+        count += 1
+        
+        if count >200:
+            break 
 
+    print(f"finished self play. total games played:{count}")
 
 if __name__ == "__main__":
     # argparse

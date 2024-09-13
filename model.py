@@ -93,9 +93,9 @@ class RLModel(nn.Module):
         loss = None
 
         if y is not None:  # if the y values for the policy and value heads are proided then calculate the loss
-            loss = self.loss(policy, y[0], value, y[1])
+            loss, policy_loss, value_loss = self.loss(policy, y[0], value, y[1])
         
-        return logits, loss
+        return logits, loss, policy_loss, value_loss
     
 
     def loss(self, y_true_policy, y_pred_policy, y_true_value, y_pred_value):
@@ -103,11 +103,12 @@ class RLModel(nn.Module):
         Uses cross entropy loss for policy head and mean sqaured error loss for value head the data is created 
         through high number of self plays between the models. 
         '''
+        print(y_true_policy.shape, y_true_value.shape)
 
         policy_loss = F.cross_entropy(y_pred_policy, y_true_policy)
         value_loss = F.mse_loss(y_pred_value, y_true_value)
     
-        return self.policy_weight * policy_loss + self.value_weight*value_loss 
+        return self.policy_weight * policy_loss + self.value_weight*value_loss, policy_loss, value_loss
     
 
 

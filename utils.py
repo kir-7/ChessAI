@@ -34,6 +34,7 @@ def move_to_plane_index(move: str, board: chess.Board):
     to_square = move.to_square
     # get piece
     piece: chess.Piece = board.piece_at(from_square)
+    
 
     if piece is None:
             raise Exception(f"No piece at {from_square}")
@@ -64,9 +65,13 @@ def moves_to_output_vector(moves: dict, board: chess.Board) -> np.ndarray:
     Convert a dictionary of moves to a vector of probabilities
     """
     vector = np.zeros((73, 8, 8), dtype=np.float32)
-    for move in moves:
+    
+    # print(moves)
+
+    for move, prob in moves.items():
         plane_index, row, col = move_to_plane_index(move, board)
-        vector[plane_index, row, col] = moves[move]
+        vector[plane_index, row, col] = prob
+
     return np.asarray(vector)
 
 def time_function(func):
@@ -80,26 +85,6 @@ def time_function(func):
         print(f'Function {func.__name__!r} executed in {(t2-t1):.4f}s')
         return result
     return wrap_func
-
-def train(model:nn.Module, data:np.ndarray, optimizer, batch_size, return_dict=False, device='cpu'):
-    '''the main train function that will train the model
-        model is the model to be trained
-        data is a dict containing the input values and the ground truth values
-        return_dict is a dict that will return the loss and metrics as dict  
-    '''
-    model.train()
-    loss_all = 0
-
-    for d in data:
-
-        data = data.to(device)
-        optimizer.zero_grad()
-        logits, loss = model(data)
-        loss.backward()
-        loss_all += loss.item()
-        optimizer.step()
-
-    return loss_all / len(data)
 
     
 def eval(model, data, device='cpu'):
@@ -140,7 +125,7 @@ def run_experiment(model, model_name, n_epochs, loss_function, optimizer, schedu
         # Call LR scheduler at start of each epoch
         lr = scheduler.optimizer.param_groups[0]['lr']
         # Train model for one epoch, return avg. training loss
-        loss = train(model, train_loader, loss_function, optimizer, device)
+        # loss = train(model, train_loader, loss_function, optimizer, device)
 
         # Evaluate model on validation set
         val_error = eval(model, val_loader, loss_function, device)
@@ -153,12 +138,12 @@ def run_experiment(model, model_name, n_epochs, loss_function, optimizer, schedu
             test_error = eval(model, test_loader, loss_function, device)
             best_val_error = val_error
 
-        if epoch % 10 == 0:
+        # if epoch % 10 == 0:
             # Print and track stats every 10 epochs
-            print(f'Epoch: {epoch:03d}, LR: {lr:5f}, Loss: {loss:.7f}, '
-                  f'Val Loss: {val_error:.7f}, Test Loss: {test_error:.7f}')
+            # print(f'Epoch: {epoch:03d}, LR: {lr:5f}, Loss: {loss:.7f}, '
+                #   f'Val Loss: {val_error:.7f}, Test Loss: {test_error:.7f}')
 
-        perf_per_epoch.append((loss, test_error, val_error, epoch, model_name))
+        # perf_per_epoch.append((loss, test_error, val_error, epoch, model_name))
 
     t = time.time() - t
     train_time = t/60

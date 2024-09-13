@@ -51,7 +51,7 @@ class MCTS:
 
     def run_simulation(self, n, node):
         
-        for _ in tqdm(range(n)):
+        for _ in tqdm(range(n), leave=False):
             self.do_rollout(node)
         
 

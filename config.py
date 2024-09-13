@@ -67,7 +67,7 @@ BATCH_SIZE = 64
 LOSS_PLOTS_FOLDER="./plots"
 
 # ============= MEMORY CONFIGURATION =============
-MEMORY_DIR = os.environ.get("MEMORY_FOLDER", "./memory")
+MEMORY_DIR = "memory"
 MAX_REPLAY_MEMORY = 1000000
 
 # ============= SOCKET CONFIGURATION =============

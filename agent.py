@@ -27,6 +27,9 @@ class Agent:
 
         self.mcts = MCTS(self, player=self.player, exploration_weight=config.EXPLORATION_WEIGHT, stochastic=stochastic)
 
+    def set_root(self, board):
+        self.root = Node(board, winner=None, terminal=False)
+
 
     def build_model(self):
         """
@@ -40,7 +43,7 @@ class Agent:
         Run n simulations of the MCTS algorithm. This function gets called every move.
         '''
         
-        print(f"Running {n} simulations...")
+        print(f"Running {n} simulations...", end='\r')
         self.mcts.run_simulation(n, self.root)
     
     def get_moves(self):

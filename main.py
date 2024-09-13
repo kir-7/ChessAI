@@ -11,7 +11,10 @@ from game import Game
 ## assuming an average game lasts for 200 moves 
 ## we are simulating 50 per move so 50*200 = 10000 simulations before the process should do
 
-
+import numpy as np
+import config
+from trainer import Trainer
+from model import RLModel
 def play_game():
     tree = MCTS(player=chess.BLACK)
     board = new_chess_board()
@@ -63,8 +66,8 @@ def new_chess_board():
 if __name__ == "__main__":
     # final_board = play_game()
     # print(final_board.outcome())
-    white = Agent(chess.WHITE)
-    black = Agent(chess.BLACK)
+    # white = Agent(chess.WHITE)
+    # black = Agent(chess.BLACK)
     # print(ChessEnv.state_to_input(board.board.fen()).shape)
     # agent.run_simulaions(2)
     # moves = agent.get_moves()
@@ -77,7 +80,24 @@ if __name__ == "__main__":
     # print(sum_move_visits, "\n")
     # print(search_probabilities)
         
-    game = Game(ChessEnv(), white, black)
-    game.play_game(True)
+    # game = Game(ChessEnv(), white, black)
+    # game.play_game(True)
+    model = RLModel(config.INPUT_SHAPE, config.OUTPUT_SHAPE)
+    t = Trainer(model, None)
+
+    data = np.load(r"D:\ai\chess\memory\game-64dfca9c.npy", allow_pickle=True)
     
+
+    print(data.shape)
+
+    x, (y_policy, y_values) = t.split_Xy(data)
     
+    # TODO:  UserWarning: Creating a tensor from a list of numpy.ndarrays is extremely slow. Please consider converting the list to a 
+    #        single numpy.ndarray with numpy.array() before converting to a tensor. Triggered in trainer.splitXy() at
+    #         return torch.Tensor(X), (torch.Tensor(y_probs).reshape(len(y_probs), config.OUTPUT_SHAPE[0]), torch.Tensor(y_value).view(len(y_value), config.OUTPUT_SHAPE[1]))
+
+    print(y_policy)
+    print(x.shape)
+    print(y_policy.shape)
+    print(y_values.shape)
+    print(t.train_batch(x, y_policy, y_values))
