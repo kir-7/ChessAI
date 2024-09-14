@@ -30,7 +30,7 @@ class Game:
 
     @staticmethod
     def get_winner(result : str):
-        return 1 if result == "1-0" else - 1 if result == "0-1" else 0
+        return 1 if result == "1-0" else -1 if result == "0-1" else 0
 
     @utils.time_function
     def play_game(self, stochastic:bool =True):
@@ -97,7 +97,7 @@ class Game:
         else:
             current_player.root = previous_node
 
-        current_player.run_simulaions(n=config.SIMULATIONS_PER_MOVE)
+        current_player.run_simulations(n=config.SIMULATIONS_PER_MOVE)
 
         moves = current_player.get_moves()
         
@@ -123,7 +123,7 @@ class Game:
 
         current_player = self.white if self.turn else self.black
 
-        sum_move_visits = sum(current_player.mcts.N[node] for node, action in moves)
+        sum_move_visits = sum(current_player.mcts.N[node] for node, _ in moves)
         # create dictionary of moves and their probabilities
         search_probabilities = {
             action.uci(): current_player.mcts.N[node] / sum_move_visits for node, action in moves}

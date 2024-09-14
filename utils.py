@@ -55,16 +55,16 @@ def move_to_plane_index(move: str, board: chess.Board):
             # get direction of queen-type move
             direction, distance = Mapping.get_queenlike_move(
                 from_square, to_square)
-            plane_index = Mapping.mapper[direction][np.abs(distance)-1]
+            plane_index = Mapping.mapper[direction][torch.abs(distance)-1]
     row = from_square % 8
     col = 7 - (from_square // 8)
     return (plane_index, row, col)
 
-def moves_to_output_vector(moves: dict, board: chess.Board) -> np.ndarray:
+def moves_to_output_vector(moves: dict, board: chess.Board) -> torch.Tensor:
     """
     Convert a dictionary of moves to a vector of probabilities
     """
-    vector = np.zeros((73, 8, 8), dtype=np.float32)
+    vector = torch.zeros((73, 8, 8), dtype=torch.float32)
     
     # print(moves)
 
@@ -72,7 +72,7 @@ def moves_to_output_vector(moves: dict, board: chess.Board) -> np.ndarray:
         plane_index, row, col = move_to_plane_index(move, board)
         vector[plane_index, row, col] = prob
 
-    return np.asarray(vector)
+    return torch.asarray(vector)
 
 def time_function(func):
     """

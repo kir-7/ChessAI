@@ -48,7 +48,7 @@ def self_play(stochastic=True):
         game.play_game(stochastic=stochastic)
         count += 1
         
-        if count >200:
+        if count >config.SELFPLAY_GAMES:
             break 
 
     print(f"finished self play. total games played:{count}")

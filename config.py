@@ -16,6 +16,9 @@ DIRICHLET_NOISE = 0.3
 MAX_PUZZLE_MOVES = 4
 MAX_GAME_MOVES = 200
 
+# number of self play games
+SELFPLAY_GAMES = 100
+
 # ============= NEURAL NETWORK INPUTS =============
 # 2 players, 6 pieces, 8x8 board
 n = 8  # board size

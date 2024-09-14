@@ -37,7 +37,7 @@ class Trainer:
 
     def split_Xy(self, data):
         # board to input format (19x8x8)
-        X = np.array([ChessEnv.state_to_input(i[0])[0] for i in data])
+        X = torch.Tensor([ChessEnv.state_to_input(i[0])[0] for i in data])
         # moves to output format (73x8x8)
         y_probs = []
         # values = winner
@@ -50,9 +50,10 @@ class Trainer:
             y_probs.append(moves)
             y_value.append(position[2])
         
-        X = np.array(X)
-
-        return torch.Tensor(X), (torch.Tensor(y_probs).reshape(len(y_probs), config.OUTPUT_SHAPE[0]), torch.Tensor(y_value).view(len(y_value), config.OUTPUT_SHAPE[1]))
+        y_probs = torch.Tensor(y_probs).reshape(len(y_probs), config.OUTPUT_SHAPE[0])
+        y_value = torch.Tensor(y_value).view(len(y_value), config.OUTPUT_SHAPE[1])
+        
+        return X, (y_probs, y_value)
 
     def train_batch(self, X, y_probs, y_value):
         

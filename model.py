@@ -90,10 +90,11 @@ class RLModel(nn.Module):
 
         logits = (policy, value)
         
-        loss = None
+        loss, policy_loss, value_loss = None, None, None
 
         if y is not None:  # if the y values for the policy and value heads are proided then calculate the loss
             loss, policy_loss, value_loss = self.loss(policy, y[0], value, y[1])
+        
         
         return logits, loss, policy_loss, value_loss
     

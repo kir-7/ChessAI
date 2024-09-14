@@ -38,7 +38,7 @@ class Agent:
         self.model = RLModel(config.INPUT_SHAPE, config.OUTPUT_SHAPE)
         return self.model
     
-    def run_simulaions(self, n :int = 50):
+    def run_simulations(self, n :int = 50):
         '''
         Run n simulations of the MCTS algorithm. This function gets called every move.
         '''
@@ -70,6 +70,6 @@ class Agent:
         if not torch.is_tensor(data):
             data = torch.Tensor(data)
             
-        (p, v), loss = self.model(data)
+        (p, v), _, _, _ = self.model(data)
         return p, v
 

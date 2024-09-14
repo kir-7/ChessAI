@@ -16,7 +16,10 @@ import config
 from trainer import Trainer
 from model import RLModel
 def play_game():
-    tree = MCTS(player=chess.BLACK)
+    
+    white = Agent(chess.WHITE)
+    black = Agent(chess.BLACK)
+
     board = new_chess_board()
     print(board)
 
@@ -24,9 +27,9 @@ def play_game():
 
     while True:
         
-
-        move = board.board.san(random.choice(list(board.board.legal_moves)))        
-        board = board.make_move(move)
+        white.root = board
+        white.run_simulations(10)
+        board = white.get_best_move()
         
         print('----------------')
         print(board)
@@ -34,14 +37,12 @@ def play_game():
         if board.terminal:
             break
         
-        assert tree.player == board.board.turn 
-
         # You can train as you go, or only at the beginning.
         # Here, we train as we go, doing fifty rollouts each turn.
-        tree.run_simulation(50, board)   ## as we expand the tree the possibilities increase which means the time taken 
-                                         ## for subsequent moves keeps increasing. so later moves will take longer as tree is larger to explore
+        black.root = board
+        black.run_simulations(10)   ## as we expand the tree the possibilities increase which means the time taken 
+        board = black.get_best_move()                                     ## for subsequent moves keeps increasing. so later moves will take longer as tree is larger to explore
 
-        board = tree.choose(board)
         print(board)
         
         if board.terminal:
@@ -50,7 +51,7 @@ def play_game():
         moves += 2
 
     print(f'the entire game lasted for {moves} moves (including moves from both players)')
-    print(f"winner:{board.winner}, turn:{board.turn}")
+    print(f"winner:{board.winner}")
     return board
 
     # TODO: currently loss function, the main updation of model parameters, and the self play are not implemented so for now in mcts we are 
@@ -64,7 +65,8 @@ def new_chess_board():
 
 
 if __name__ == "__main__":
-    # final_board = play_game()
+    final_board = play_game()
+    print(final_board)
     # print(final_board.outcome())
     # white = Agent(chess.WHITE)
     # black = Agent(chess.BLACK)
@@ -82,22 +84,22 @@ if __name__ == "__main__":
         
     # game = Game(ChessEnv(), white, black)
     # game.play_game(True)
-    model = RLModel(config.INPUT_SHAPE, config.OUTPUT_SHAPE)
-    t = Trainer(model, None)
+    # model = RLModel(config.INPUT_SHAPE, config.OUTPUT_SHAPE)
+    # t = Trainer(model, None)
 
-    data = np.load(r"D:\ai\chess\memory\game-64dfca9c.npy", allow_pickle=True)
+    # data = np.load(r"D:\ai\chess\memory\game-64dfca9c.npy", allow_pickle=True)
     
 
-    print(data.shape)
+    # print(data.shape)
 
-    x, (y_policy, y_values) = t.split_Xy(data)
+    # x, (y_policy, y_values) = t.split_Xy(data)
     
     # TODO:  UserWarning: Creating a tensor from a list of numpy.ndarrays is extremely slow. Please consider converting the list to a 
     #        single numpy.ndarray with numpy.array() before converting to a tensor. Triggered in trainer.splitXy() at
     #         return torch.Tensor(X), (torch.Tensor(y_probs).reshape(len(y_probs), config.OUTPUT_SHAPE[0]), torch.Tensor(y_value).view(len(y_value), config.OUTPUT_SHAPE[1]))
 
-    print(y_policy)
-    print(x.shape)
-    print(y_policy.shape)
-    print(y_values.shape)
-    print(t.train_batch(x, y_policy, y_values))
+    # print(y_policy)
+    # print(x.shape)
+    # print(y_policy.shape)
+    # print(y_values.shape)
+    # print(t.train_batch(x, y_policy, y_values))
